@@ -7,8 +7,9 @@ import { useToast } from '@/hooks/use-toast';
 import { movieQuestions, Question } from '@/data/movieQuestions';
 import { animalQuestions } from '@/data/animalQuestions';
 import { oceanQuestions } from '@/data/oceanQuestions';
+import { tonQuestions } from '@/data/tonQuestions';
 
-type QuizCategory = 'menu' | 'movies' | 'animals' | 'ocean';
+type QuizCategory = 'menu' | 'movies' | 'animals' | 'ocean' | 'ton';
 
 declare global {
   interface Window {
@@ -39,6 +40,7 @@ export default function Index() {
       case 'movies': return movieQuestions;
       case 'animals': return animalQuestions;
       case 'ocean': return oceanQuestions;
+      case 'ton': return tonQuestions;
       default: return [];
     }
   };
@@ -268,6 +270,20 @@ export default function Index() {
                 </Badge>
               </div>
             </Card>
+
+            <Card 
+              className="p-8 bg-gradient-to-br from-blue-600/20 to-sky-500/20 border-blue-600/50 backdrop-blur-sm cursor-pointer hover:scale-105 transition-transform"
+              onClick={() => handleCategorySelect('ton')}
+            >
+              <div className="text-center space-y-3">
+                <div className="text-6xl">💎</div>
+                <h2 className="text-3xl font-bold">TON & Павел Дуров</h2>
+                <p className="text-muted-foreground">110+ вопросов о блокчейне</p>
+                <Badge className="bg-blue-600/30 text-blue-300 border-blue-600/50">
+                  До 0.00110 TON
+                </Badge>
+              </div>
+            </Card>
           </div>
 
           <Card className="p-6 bg-card/30 backdrop-blur-sm border-border/30">
@@ -288,6 +304,7 @@ export default function Index() {
       case 'movies': return '🎬 Кино Викторина';
       case 'animals': return '🦁 Животные';
       case 'ocean': return '🌊 Подводный мир';
+      case 'ton': return '💎 TON & Павел Дуров';
       default: return 'Викторина';
     }
   };
