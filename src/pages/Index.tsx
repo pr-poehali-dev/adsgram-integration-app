@@ -33,6 +33,8 @@ export default function Index() {
   const [showAdButton, setShowAdButton] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [adsgramController, setAdsgramController] = useState<any>(null);
+  const [timeLeft, setTimeLeft] = useState(20);
+  const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
   const { toast } = useToast();
 
   const getQuestions = (): Question[] => {
@@ -74,6 +76,55 @@ export default function Index() {
     }
   }, [correctAnswers]);
 
+  useEffect(() => {
+    if (category === 'menu' || isAnswered || isGameOver) return;
+
+    setTimeLeft(20);
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleTimeOut();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [currentQuestionIndex, category, isAnswered, isGameOver]);
+
+  const handleTimeOut = () => {
+    if (isAnswered) return;
+    
+    setIsAnswered(true);
+    const newLives = lives - 1;
+    setLives(newLives);
+    
+    if (newLives === 0) {
+      setIsGameOver(true);
+      toast({
+        title: '⏰ Время вышло!',
+        description: 'У вас закончились жизни. Посмотрите рекламу, чтобы продолжить.',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: '⏰ Время вышло!',
+        description: `Осталось жизней: ${newLives}`,
+        variant: 'destructive',
+      });
+      
+      setTimeout(() => {
+        if (currentQuestionIndex < questions.length - 1) {
+          setCurrentQuestionIndex(prev => prev + 1);
+          setSelectedAnswer(null);
+          setIsAnswered(false);
+        }
+      }, 1500);
+    }
+  };
+
   const handleAnswerSelect = (answerIndex: number) => {
     if (isAnswered) return;
     
@@ -81,17 +132,29 @@ export default function Index() {
     setIsAnswered(true);
 
     const isCorrect = answerIndex === currentQuestion.correctAnswer;
+    const questionId = currentQuestion.id;
+    const alreadyAnswered = answeredQuestions.has(questionId);
 
     if (isCorrect) {
       const reward = currentQuestion.reward;
-      setBalance(prev => prev + reward);
+      
+      if (!alreadyAnswered) {
+        setBalance(prev => prev + reward);
+        setAnsweredQuestions(prev => new Set(prev).add(questionId));
+        
+        toast({
+          title: '🎉 Правильно!',
+          description: `+${reward} JBL`,
+        });
+      } else {
+        toast({
+          title: '✅ Правильно!',
+          description: 'Вы уже получили награду за этот вопрос',
+        });
+      }
+
       setCorrectAnswers(prev => prev + 1);
       setTotalCorrect(prev => prev + 1);
-      
-      toast({
-        title: '🎉 Правильно!',
-        description: `+${reward} TON`,
-      });
 
       setTimeout(() => {
         if (currentQuestionIndex < questions.length - 1) {
@@ -204,6 +267,8 @@ export default function Index() {
     setIsAnswered(false);
     setShowAdButton(false);
     setIsGameOver(false);
+    setTimeLeft(20);
+    setAnsweredQuestions(new Set());
   };
 
   const handleBackToMenu = () => {
@@ -217,6 +282,8 @@ export default function Index() {
     setIsAnswered(false);
     setShowAdButton(false);
     setIsGameOver(false);
+    setTimeLeft(20);
+    setAnsweredQuestions(new Set());
   };
 
   if (category === 'menu') {
@@ -225,7 +292,11 @@ export default function Index() {
         <div className="max-w-2xl w-full space-y-6">
           <div className="text-center space-y-2">
             <h1 className="text-5xl font-bold gradient-text">🎯 Викторина</h1>
-            <p className="text-muted-foreground text-lg">Выбери категорию и зарабатывай TON</p>
+            <p className="text-muted-foreground text-lg">Выбери категорию и зарабатывай JBL токены</p>
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground/70">
+              <span>Контракт JBL:</span>
+              <code className="bg-card/50 px-2 py-1 rounded text-xs">EQBdB-mgZ0fFswcBbe3SD1XPMmv18UmnJ_BFQNTfQGG2t4Q9</code>
+            </div>
           </div>
 
           <div className="grid gap-4">
@@ -238,7 +309,7 @@ export default function Index() {
                 <h2 className="text-3xl font-bold">Кино</h2>
                 <p className="text-muted-foreground">105 вопросов о фильмах</p>
                 <Badge className="bg-purple-500/30 text-purple-300 border-purple-500/50">
-                  До 0.0105 TON
+                  До 10,500 JBL
                 </Badge>
               </div>
             </Card>
@@ -252,7 +323,7 @@ export default function Index() {
                 <h2 className="text-3xl font-bold">Животные</h2>
                 <p className="text-muted-foreground">100 вопросов о фауне</p>
                 <Badge className="bg-green-500/30 text-green-300 border-green-500/50">
-                  До 0.0100 TON
+                  До 10,000 JBL
                 </Badge>
               </div>
             </Card>
@@ -266,7 +337,7 @@ export default function Index() {
                 <h2 className="text-3xl font-bold">Подводный мир</h2>
                 <p className="text-muted-foreground">100 вопросов об океане</p>
                 <Badge className="bg-blue-500/30 text-blue-300 border-blue-500/50">
-                  До 0.0100 TON
+                  До 10,000 JBL
                 </Badge>
               </div>
             </Card>
@@ -280,7 +351,7 @@ export default function Index() {
                 <h2 className="text-3xl font-bold">TON & Павел Дуров</h2>
                 <p className="text-muted-foreground">110+ вопросов о блокчейне</p>
                 <Badge className="bg-blue-600/30 text-blue-300 border-blue-600/50">
-                  До 0.00110 TON
+                  До 1,100 JBL
                 </Badge>
               </div>
             </Card>
@@ -290,7 +361,7 @@ export default function Index() {
             <div className="flex items-center gap-3">
               <Icon name="Info" className="text-accent" size={24} />
               <div className="text-sm text-muted-foreground">
-                Отвечай на вопросы правильно, зарабатывай TON и смотри рекламу для продолжения!
+                Отвечай на вопросы правильно за 20 секунд, зарабатывай JBL и смотри рекламу для продолжения!
               </div>
             </div>
           </Card>
@@ -325,11 +396,18 @@ export default function Index() {
 
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold gradient-text">{getCategoryTitle()}</h1>
-          <p className="text-muted-foreground">Отвечай на вопросы и зарабатывай TON</p>
+          <p className="text-muted-foreground">Отвечай на вопросы и зарабатывай JBL токены</p>
         </div>
 
         <Card className="gradient-primary p-6 border-0 shadow-2xl">
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-4 gap-3 text-center">
+            <div>
+              <p className="text-white/80 text-xs uppercase tracking-wider mb-1">Время</p>
+              <div className="flex items-center justify-center gap-1">
+                <Icon name="Timer" className="text-yellow-300" size={20} />
+                <h3 className={`text-2xl font-bold ${timeLeft <= 5 ? 'text-red-300 animate-pulse' : 'text-white'}`}>{timeLeft}s</h3>
+              </div>
+            </div>
             <div>
               <p className="text-white/80 text-xs uppercase tracking-wider mb-1">Вопрос</p>
               <div className="flex items-center justify-center gap-1">
@@ -349,7 +427,7 @@ export default function Index() {
               <p className="text-white/80 text-xs uppercase tracking-wider mb-1">Баланс</p>
               <div className="flex items-center justify-center gap-1">
                 <Icon name="Coins" className="text-yellow-300" size={20} />
-                <h3 className="text-2xl font-bold text-white">{balance.toFixed(4)}</h3>
+                <h3 className="text-2xl font-bold text-white">{balance.toLocaleString()}</h3>
               </div>
             </div>
           </div>
