@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
-import { movieQuestions } from '@/data/movieQuestions';
+import { movieQuestions, Question } from '@/data/movieQuestions';
+import { animalQuestions } from '@/data/animalQuestions';
+import { oceanQuestions } from '@/data/oceanQuestions';
+
+type QuizCategory = 'menu' | 'movies' | 'animals' | 'ocean';
 
 declare global {
   interface Window {
@@ -17,6 +21,7 @@ declare global {
 }
 
 export default function Index() {
+  const [category, setCategory] = useState<QuizCategory>('menu');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [lives, setLives] = useState(1);
@@ -29,7 +34,17 @@ export default function Index() {
   const [adsgramController, setAdsgramController] = useState<any>(null);
   const { toast } = useToast();
 
-  const currentQuestion = movieQuestions[currentQuestionIndex];
+  const getQuestions = (): Question[] => {
+    switch (category) {
+      case 'movies': return movieQuestions;
+      case 'animals': return animalQuestions;
+      case 'ocean': return oceanQuestions;
+      default: return [];
+    }
+  };
+
+  const questions = getQuestions();
+  const currentQuestion = questions[currentQuestionIndex];
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -77,7 +92,7 @@ export default function Index() {
       });
 
       setTimeout(() => {
-        if (currentQuestionIndex < movieQuestions.length - 1) {
+        if (currentQuestionIndex < questions.length - 1) {
           setCurrentQuestionIndex(prev => prev + 1);
           setSelectedAnswer(null);
           setIsAnswered(false);
@@ -176,11 +191,123 @@ export default function Index() {
     return 'bg-card/50 border-border/50 opacity-50';
   };
 
+  const handleCategorySelect = (selectedCategory: QuizCategory) => {
+    setCategory(selectedCategory);
+    setCurrentQuestionIndex(0);
+    setSelectedAnswer(null);
+    setLives(1);
+    setBalance(0);
+    setCorrectAnswers(0);
+    setTotalCorrect(0);
+    setIsAnswered(false);
+    setShowAdButton(false);
+    setIsGameOver(false);
+  };
+
+  const handleBackToMenu = () => {
+    setCategory('menu');
+    setCurrentQuestionIndex(0);
+    setSelectedAnswer(null);
+    setLives(1);
+    setBalance(0);
+    setCorrectAnswers(0);
+    setTotalCorrect(0);
+    setIsAnswered(false);
+    setShowAdButton(false);
+    setIsGameOver(false);
+  };
+
+  if (category === 'menu') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0F0A1F] via-[#1A1333] to-[#0F0A1F] p-6 flex items-center justify-center">
+        <div className="max-w-2xl w-full space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-5xl font-bold gradient-text">🎯 Викторина</h1>
+            <p className="text-muted-foreground text-lg">Выбери категорию и зарабатывай TON</p>
+          </div>
+
+          <div className="grid gap-4">
+            <Card 
+              className="p-8 bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/50 backdrop-blur-sm cursor-pointer hover:scale-105 transition-transform"
+              onClick={() => handleCategorySelect('movies')}
+            >
+              <div className="text-center space-y-3">
+                <div className="text-6xl">🎬</div>
+                <h2 className="text-3xl font-bold">Кино</h2>
+                <p className="text-muted-foreground">105 вопросов о фильмах</p>
+                <Badge className="bg-purple-500/30 text-purple-300 border-purple-500/50">
+                  До 0.0105 TON
+                </Badge>
+              </div>
+            </Card>
+
+            <Card 
+              className="p-8 bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/50 backdrop-blur-sm cursor-pointer hover:scale-105 transition-transform"
+              onClick={() => handleCategorySelect('animals')}
+            >
+              <div className="text-center space-y-3">
+                <div className="text-6xl">🦁</div>
+                <h2 className="text-3xl font-bold">Животные</h2>
+                <p className="text-muted-foreground">100 вопросов о фауне</p>
+                <Badge className="bg-green-500/30 text-green-300 border-green-500/50">
+                  До 0.0100 TON
+                </Badge>
+              </div>
+            </Card>
+
+            <Card 
+              className="p-8 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-500/50 backdrop-blur-sm cursor-pointer hover:scale-105 transition-transform"
+              onClick={() => handleCategorySelect('ocean')}
+            >
+              <div className="text-center space-y-3">
+                <div className="text-6xl">🌊</div>
+                <h2 className="text-3xl font-bold">Подводный мир</h2>
+                <p className="text-muted-foreground">100 вопросов об океане</p>
+                <Badge className="bg-blue-500/30 text-blue-300 border-blue-500/50">
+                  До 0.0100 TON
+                </Badge>
+              </div>
+            </Card>
+          </div>
+
+          <Card className="p-6 bg-card/30 backdrop-blur-sm border-border/30">
+            <div className="flex items-center gap-3">
+              <Icon name="Info" className="text-accent" size={24} />
+              <div className="text-sm text-muted-foreground">
+                Отвечай на вопросы правильно, зарабатывай TON и смотри рекламу для продолжения!
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const getCategoryTitle = () => {
+    switch (category) {
+      case 'movies': return '🎬 Кино Викторина';
+      case 'animals': return '🦁 Животные';
+      case 'ocean': return '🌊 Подводный мир';
+      default: return 'Викторина';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0F0A1F] via-[#1A1333] to-[#0F0A1F] p-6">
       <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={handleBackToMenu}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Icon name="ArrowLeft" className="mr-2" size={20} />
+            Меню
+          </Button>
+        </div>
+
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold gradient-text">🎬 Кино Викторина</h1>
+          <h1 className="text-4xl font-bold gradient-text">{getCategoryTitle()}</h1>
           <p className="text-muted-foreground">Отвечай на вопросы и зарабатывай TON</p>
         </div>
 
@@ -191,7 +318,7 @@ export default function Index() {
               <div className="flex items-center justify-center gap-1">
                 <Icon name="HelpCircle" className="text-yellow-300" size={20} />
                 <h3 className="text-2xl font-bold text-white">{currentQuestionIndex + 1}</h3>
-                <span className="text-white/70">/ {movieQuestions.length}</span>
+                <span className="text-white/70">/ {questions.length}</span>
               </div>
             </div>
             <div>
