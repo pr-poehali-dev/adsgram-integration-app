@@ -21,6 +21,11 @@ declare global {
   }
 }
 
+const correctSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBCiH0O/aizsIHGm98OScTgwRXLTs66dSEwtMo+PzvWQbBDmP1vDJdykGKH/N8N2SOwoVYbrs66lVFApJoeL0v2wgBCmH0O7XiToHHGy98OabTQwSXrXt66dSEwtKo+Lzu2MbBDqQ1/DMeSgGKIDO8NySOwoVY7vs66hWFApJoeL0vmsgBCqI0e7WiToHG22+8OWaTAwSXrXt66dTEwtKo+Lzu2IbBDqQ1/DLeSkFKIDO8NuSPAkUY7rs66hVFApKouL0vmsfBCuI0e/WiTkHHG2+8OWaTQwSXrbr66dUEwtJo+Hzu2MbBDuQ2PDLeiwFKoHN8NqSOwkVYrns66lUFQpJouL0vmwfBCuH0O/ZiDkHHWy+7+WbTQwSXrXs66hUEwtKpOHz') as HTMLAudioElement;
+const wrongSound = new Audio('data:audio/wav;base64,UklGRigBAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQBAAD//v3+/P75+ff38u7p5ODb1tDLxcC6tK+pn5mSi4R9dnBeWFFKQz05Mjw9P0BBQUFFR0ZGR0ZFQj89OTQtJx4VDAMBAAABAwYKDhMYHSMqL1VEOy8jFgsAAPv28u7p5N7Z08zFv7mxqaGYkIl/dnBpYFlRSkM8NDEuLTAyNTk9Q0hOVGBgXFdRSkM8NS8oIRoTDAQBAQIDCA0TGSEoMLe4tbOxrqqnoJ6enaCfoJydmZSPiYN9d3BqZV9ZU05JREBBRUlNUldbYmpzeYSQnaqzvc3X4On0AAAJFR4nMTpESliCkqSyvsnZ6vr+//37+fXw7OXf2dPMyb++tbCqqZ+cmpSRjoqHhH9+fXt4dnRxb2xpaWhmY2FfXFpYVVVVVVVVVlZXWFpbXl9iZGZqb3R4fYKIjpOZoKatsLO2ubu8') as HTMLAudioElement;
+correctSound.volume = 0.3;
+wrongSound.volume = 0.3;
+
 export default function Index() {
   const [category, setCategory] = useState<QuizCategory>('menu');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -97,6 +102,9 @@ export default function Index() {
   const handleTimeOut = () => {
     if (isAnswered) return;
     
+    wrongSound.currentTime = 0;
+    wrongSound.play().catch(() => {});
+    
     setIsAnswered(true);
     const newLives = lives - 1;
     setLives(newLives);
@@ -136,6 +144,9 @@ export default function Index() {
     const alreadyAnswered = answeredQuestions.has(questionId);
 
     if (isCorrect) {
+      correctSound.currentTime = 0;
+      correctSound.play().catch(() => {});
+      
       const reward = currentQuestion.reward;
       
       if (!alreadyAnswered) {
@@ -169,6 +180,9 @@ export default function Index() {
         }
       }, 1500);
     } else {
+      wrongSound.currentTime = 0;
+      wrongSound.play().catch(() => {});
+      
       const newLives = lives - 1;
       setLives(newLives);
       
@@ -309,7 +323,7 @@ export default function Index() {
                 <h2 className="text-3xl font-bold">Кино</h2>
                 <p className="text-muted-foreground">105 вопросов о фильмах</p>
                 <Badge className="bg-purple-500/30 text-purple-300 border-purple-500/50">
-                  До 10,500 JBL
+                  До 0.00105 JBL
                 </Badge>
               </div>
             </Card>
@@ -323,7 +337,7 @@ export default function Index() {
                 <h2 className="text-3xl font-bold">Животные</h2>
                 <p className="text-muted-foreground">100 вопросов о фауне</p>
                 <Badge className="bg-green-500/30 text-green-300 border-green-500/50">
-                  До 10,000 JBL
+                  До 0.00100 JBL
                 </Badge>
               </div>
             </Card>
@@ -337,7 +351,7 @@ export default function Index() {
                 <h2 className="text-3xl font-bold">Подводный мир</h2>
                 <p className="text-muted-foreground">100 вопросов об океане</p>
                 <Badge className="bg-blue-500/30 text-blue-300 border-blue-500/50">
-                  До 10,000 JBL
+                  До 0.00100 JBL
                 </Badge>
               </div>
             </Card>
@@ -351,7 +365,7 @@ export default function Index() {
                 <h2 className="text-3xl font-bold">TON & Павел Дуров</h2>
                 <p className="text-muted-foreground">110+ вопросов о блокчейне</p>
                 <Badge className="bg-blue-600/30 text-blue-300 border-blue-600/50">
-                  До 1,100 JBL
+                  До 0.00110 JBL
                 </Badge>
               </div>
             </Card>
@@ -427,7 +441,7 @@ export default function Index() {
               <p className="text-white/80 text-xs uppercase tracking-wider mb-1">Баланс</p>
               <div className="flex items-center justify-center gap-1">
                 <Icon name="Coins" className="text-yellow-300" size={20} />
-                <h3 className="text-2xl font-bold text-white">{balance.toLocaleString()}</h3>
+                <h3 className="text-2xl font-bold text-white">{balance.toFixed(5)}</h3>
               </div>
             </div>
           </div>
