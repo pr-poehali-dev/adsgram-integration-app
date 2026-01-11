@@ -128,7 +128,7 @@ export default function Index() {
   };
 
   const handleCopyReferral = () => {
-    const referralLink = `https://t.me/YOUR_BOT_USERNAME?start=${referralCode}`;
+    const referralLink = `https://t.me/cinema_and_moneybot?start=${referralCode}`;
     navigator.clipboard.writeText(referralLink);
     toast({
       title: '✅ Скопировано',
@@ -137,7 +137,7 @@ export default function Index() {
   };
 
   const handleShareReferral = () => {
-    const referralLink = `https://t.me/YOUR_BOT_USERNAME?start=${referralCode}`;
+    const referralLink = `https://t.me/cinema_and_moneybot?start=${referralCode}`;
     const text = `Присоединяйся к TonAds! Смотри рекламу и зарабатывай TON 💰`;
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(text)}`;
     window.open(shareUrl, '_blank');
@@ -534,7 +534,7 @@ export default function Index() {
           <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50">
             <h3 className="font-semibold mb-4">Твоя реферальная ссылка</h3>
             <div className="p-4 bg-muted/30 rounded-lg mb-4 break-all text-sm font-mono text-center">
-              https://t.me/YOUR_BOT_USERNAME?start={referralCode}
+              https://t.me/cinema_and_moneybot?start={referralCode}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Button
