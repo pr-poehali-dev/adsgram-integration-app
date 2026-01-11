@@ -52,16 +52,33 @@ export default function Index() {
   const currentQuestion = questions[currentQuestionIndex];
 
   useEffect(() => {
-    const script = document.createElement('script');
-    script.innerHTML = `
-      (function(d,z,s){s.src='https://'+d+'/401/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('waufooty.com',7468018,document.createElement('script'))
+    const interstitialScript = document.createElement('script');
+    interstitialScript.innerHTML = `
+      (function(d,z,s){s.src='https://'+d+'/401/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('waufooty.com',3185412,document.createElement('script'))
     `;
-    document.body.appendChild(script);
+    document.body.appendChild(interstitialScript);
+
+    const bannerScript = document.createElement('script');
+    bannerScript.async = true;
+    bannerScript.setAttribute('data-cfasync', 'false');
+    bannerScript.src = '//pl24549136.profitablecpmrate.com/ac8ed1c4be61b769cf0eca9ffdc76e10/invoke.js';
+    document.body.appendChild(bannerScript);
+
+    const bannerContainer = document.createElement('div');
+    bannerContainer.id = 'container-ac8ed1c4be61b769cf0eca9ffdc76e10';
+    document.body.appendChild(bannerContainer);
+
     setAdLoaded(true);
 
     return () => {
-      if (script.parentNode) {
-        document.body.removeChild(script);
+      if (interstitialScript.parentNode) {
+        document.body.removeChild(interstitialScript);
+      }
+      if (bannerScript.parentNode) {
+        document.body.removeChild(bannerScript);
+      }
+      if (bannerContainer.parentNode) {
+        document.body.removeChild(bannerContainer);
       }
     };
   }, []);
@@ -515,6 +532,10 @@ export default function Index() {
             </div>
           </Card>
         )}
+
+        <div className="fixed bottom-0 left-0 right-0 flex justify-center items-center bg-background/80 backdrop-blur-sm border-t border-border/30 pb-safe z-50">
+          <div id="container-ac8ed1c4be61b769cf0eca9ffdc76e10" className="w-full max-w-[728px] min-h-[90px] flex items-center justify-center"></div>
+        </div>
       </div>
     </div>
   );
