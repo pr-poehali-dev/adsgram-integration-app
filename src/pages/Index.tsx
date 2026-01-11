@@ -38,7 +38,7 @@ export default function Index() {
     script.async = true;
     script.onload = () => {
       if (window.Adsgram) {
-        const controller = window.Adsgram.init({ blockId: '${ADSGRAM_BLOCK_ID}' });
+        const controller = window.Adsgram.init({ blockId: '19930' });
         setAdsgramController(controller);
       }
     };
