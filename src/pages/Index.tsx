@@ -6,7 +6,17 @@ import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
 
-type TabType = 'home' | 'ads' | 'wallet' | 'profile';
+type TabType = 'home' | 'ads' | 'wallet' | 'profile' | 'referral';
+
+declare global {
+  interface Window {
+    Adsgram?: {
+      init: (config: { blockId: string; debug?: boolean }) => {
+        show: () => Promise<{ done: boolean; state: string; error?: boolean; }>;
+      };
+    };
+  }
+}
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -17,7 +27,27 @@ export default function Index() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isWatching, setIsWatching] = useState(false);
   const [walletConnected, setWalletConnected] = useState(false);
+  const [referrals, setReferrals] = useState(0);
+  const [referralCode] = useState('REF' + Math.random().toString(36).substring(2, 8).toUpperCase());
+  const [adsgramController, setAdsgramController] = useState<any>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://sad.adsgram.ai/js/sad.min.js';
+    script.async = true;
+    script.onload = () => {
+      if (window.Adsgram) {
+        const controller = window.Adsgram.init({ blockId: '${ADSGRAM_BLOCK_ID}' });
+        setAdsgramController(controller);
+      }
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   useEffect(() => {
     if (timeLeft > 0) {
@@ -28,23 +58,49 @@ export default function Index() {
     }
   }, [timeLeft, canWatchAd]);
 
-  const handleWatchAd = () => {
+  const handleWatchAd = async () => {
+    if (!adsgramController) {
+      toast({
+        title: '⚠️ Ошибка',
+        description: 'Adsgram загружается, попробуйте через пару секунд',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsWatching(true);
     
-    setTimeout(() => {
-      const reward = 0.0001;
-      setBalance(prev => prev + reward);
-      setTotalEarned(prev => prev + reward);
-      setAdsWatched(prev => prev + 1);
-      setCanWatchAd(false);
-      setTimeLeft(60);
-      setIsWatching(false);
+    try {
+      const result = await adsgramController.show();
       
+      if (result.done) {
+        const reward = 0.0001;
+        setBalance(prev => prev + reward);
+        setTotalEarned(prev => prev + reward);
+        setAdsWatched(prev => prev + 1);
+        setCanWatchAd(false);
+        setTimeLeft(60);
+        
+        toast({
+          title: '🎉 Награда получена!',
+          description: `+${reward} TON добавлено на баланс`,
+        });
+      } else if (result.error) {
+        toast({
+          title: '❌ Ошибка',
+          description: 'Не удалось показать рекламу, попробуйте позже',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
       toast({
-        title: '🎉 Награда получена!',
-        description: `+${reward} TON добавлено на баланс`,
+        title: '❌ Ошибка',
+        description: 'Не удалось загрузить рекламу',
+        variant: 'destructive',
       });
-    }, 3000);
+    } finally {
+      setIsWatching(false);
+    }
   };
 
   const handleConnectWallet = () => {
@@ -56,7 +112,7 @@ export default function Index() {
   };
 
   const handleWithdraw = () => {
-    if (balance >= 0.001) {
+    if (balance >= 0.1) {
       toast({
         title: '💸 Вывод инициирован',
         description: `${balance.toFixed(4)} TON отправлено на ваш кошелек`,
@@ -65,10 +121,26 @@ export default function Index() {
     } else {
       toast({
         title: '⚠️ Недостаточно средств',
-        description: 'Минимальная сумма для вывода: 0.001 TON',
+        description: 'Минимальная сумма для вывода: 0.1 TON',
         variant: 'destructive',
       });
     }
+  };
+
+  const handleCopyReferral = () => {
+    const referralLink = `https://t.me/YOUR_BOT_USERNAME?start=${referralCode}`;
+    navigator.clipboard.writeText(referralLink);
+    toast({
+      title: '✅ Скопировано',
+      description: 'Реферальная ссылка скопирована в буфер обмена',
+    });
+  };
+
+  const handleShareReferral = () => {
+    const referralLink = `https://t.me/YOUR_BOT_USERNAME?start=${referralCode}`;
+    const text = `Присоединяйся к TonAds! Смотри рекламу и зарабатывай TON 💰`;
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(text)}`;
+    window.open(shareUrl, '_blank');
   };
 
   return (
@@ -311,7 +383,7 @@ export default function Index() {
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm text-muted-foreground">Минимум для вывода</span>
-                      <span className="font-semibold">0.001 TON</span>
+                      <span className="font-semibold">0.1 TON</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Комиссия сети</span>
@@ -321,16 +393,16 @@ export default function Index() {
                   
                   <Button
                     onClick={handleWithdraw}
-                    disabled={balance < 0.001}
+                    disabled={balance < 0.1}
                     className="w-full gradient-primary text-white font-semibold hover:opacity-90 disabled:opacity-50"
                   >
                     <Icon name="Send" className="mr-2" />
                     Вывести {balance.toFixed(4)} TON
                   </Button>
                   
-                  {balance < 0.001 && (
+                  {balance < 0.1 && (
                     <p className="text-xs text-center text-muted-foreground">
-                      Еще {(0.001 - balance).toFixed(4)} TON до минимальной суммы
+                      Еще {(0.1 - balance).toFixed(4)} TON до минимальной суммы
                     </p>
                   )}
                 </div>
@@ -427,42 +499,134 @@ export default function Index() {
         </div>
       )}
 
+      {activeTab === 'referral' && (
+        <div className="p-6 space-y-6 animate-fade-in">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-primary via-secondary to-accent">
+              <Icon name="Users" className="text-white" size={24} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Рефералы</h2>
+              <p className="text-sm text-muted-foreground">Приглашай друзей</p>
+            </div>
+          </div>
+
+          <Card className="p-6 text-center bg-card/50 backdrop-blur-sm border-border/50">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+              <Icon name="Gift" className="text-white" size={36} />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Получай 10% от друзей</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              За каждого друга, который посмотрит рекламу, ты получишь 10% от его заработка
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="text-3xl font-bold text-primary">{referrals}</p>
+                <p className="text-xs text-muted-foreground">Рефералов</p>
+              </div>
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="text-3xl font-bold text-accent">{(referrals * 0.00001).toFixed(5)}</p>
+                <p className="text-xs text-muted-foreground">Заработано TON</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50">
+            <h3 className="font-semibold mb-4">Твоя реферальная ссылка</h3>
+            <div className="p-4 bg-muted/30 rounded-lg mb-4 break-all text-sm font-mono text-center">
+              https://t.me/YOUR_BOT_USERNAME?start={referralCode}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={handleCopyReferral}
+                variant="outline"
+                className="w-full"
+              >
+                <Icon name="Copy" className="mr-2" size={18} />
+                Копировать
+              </Button>
+              <Button
+                onClick={handleShareReferral}
+                className="w-full gradient-primary text-white hover:opacity-90"
+              >
+                <Icon name="Share2" className="mr-2" size={18} />
+                Поделиться
+              </Button>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <Icon name="Sparkles" className="text-primary" size={20} />
+              Как это работает?
+            </h3>
+            <ul className="space-y-3 text-sm text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <Icon name="CheckCircle2" className="text-primary mt-0.5 shrink-0" size={16} />
+                <span>Поделись ссылкой с друзьями через Telegram</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Icon name="CheckCircle2" className="text-primary mt-0.5 shrink-0" size={16} />
+                <span>Когда друг зарегистрируется — он станет твоим рефералом</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Icon name="CheckCircle2" className="text-primary mt-0.5 shrink-0" size={16} />
+                <span>Получай 10% от каждого заработка реферала пожизненно</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Icon name="CheckCircle2" className="text-primary mt-0.5 shrink-0" size={16} />
+                <span>Чем больше рефералов — тем больше пассивный доход</span>
+              </li>
+            </ul>
+          </Card>
+        </div>
+      )}
+
       <div className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-lg border-t border-border/50">
-        <div className="grid grid-cols-4 gap-1 p-2">
+        <div className="grid grid-cols-5 gap-1 p-2">
           <button
             onClick={() => setActiveTab('home')}
-            className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+            className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
               activeTab === 'home' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <Icon name="Home" size={24} />
+            <Icon name="Home" size={22} />
             <span className="text-xs font-medium">Главная</span>
           </button>
           <button
             onClick={() => setActiveTab('ads')}
-            className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+            className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
               activeTab === 'ads' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <Icon name="Video" size={24} />
+            <Icon name="Video" size={22} />
             <span className="text-xs font-medium">Реклама</span>
           </button>
           <button
             onClick={() => setActiveTab('wallet')}
-            className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+            className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
               activeTab === 'wallet' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <Icon name="Wallet" size={24} />
+            <Icon name="Wallet" size={22} />
             <span className="text-xs font-medium">Кошелек</span>
           </button>
           <button
+            onClick={() => setActiveTab('referral')}
+            className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
+              activeTab === 'referral' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Icon name="Users" size={22} />
+            <span className="text-xs font-medium">Рефералы</span>
+          </button>
+          <button
             onClick={() => setActiveTab('profile')}
-            className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+            className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
               activeTab === 'profile' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <Icon name="User" size={24} />
+            <Icon name="User" size={22} />
             <span className="text-xs font-medium">Профиль</span>
           </button>
         </div>
