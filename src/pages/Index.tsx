@@ -13,11 +13,7 @@ type QuizCategory = 'menu' | 'movies' | 'animals' | 'ocean' | 'ton';
 
 declare global {
   interface Window {
-    Adsgram?: {
-      init: (config: { blockId: string; debug?: boolean }) => {
-        show: () => Promise<{ done: boolean; state: string; error?: boolean; }>;
-      };
-    };
+    monetag?: any;
   }
 }
 
@@ -37,7 +33,7 @@ export default function Index() {
   const [isAnswered, setIsAnswered] = useState(false);
   const [showAdButton, setShowAdButton] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
-  const [adsgramController, setAdsgramController] = useState<any>(null);
+  const [adLoaded, setAdLoaded] = useState(false);
   const [timeLeft, setTimeLeft] = useState(20);
   const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
   const { toast } = useToast();
@@ -57,20 +53,15 @@ export default function Index() {
 
   useEffect(() => {
     const script = document.createElement('script');
-    script.src = 'https://sad.adsgram.ai/js/sad.min.js';
-    script.async = true;
-    script.onload = () => {
-      if (window.Adsgram) {
-        const controller = window.Adsgram.init({ blockId: '19930' });
-        setAdsgramController(controller);
-      }
-    };
+    script.innerHTML = `
+      (function(d,z,s){s.src='https://'+d+'/401/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('waufooty.com',7468018,document.createElement('script'))
+    `;
     document.body.appendChild(script);
+    setAdLoaded(true);
 
     return () => {
-      const existingScript = document.querySelector('script[src="https://sad.adsgram.ai/js/sad.min.js"]');
-      if (existingScript) {
-        document.body.removeChild(existingScript);
+      if (script.parentNode) {
+        document.body.removeChild(script);
       }
     };
   }, []);
@@ -208,8 +199,8 @@ export default function Index() {
     }
   };
 
-  const handleWatchAdToContinue = async () => {
-    if (!adsgramController) {
+  const handleWatchAdToContinue = () => {
+    if (!adLoaded) {
       toast({
         title: '⚠️ Подождите',
         description: 'Загружаем рекламу...',
@@ -218,42 +209,31 @@ export default function Index() {
       return;
     }
 
-    try {
-      const result = await adsgramController.show();
-      
-      if (result.done) {
-        if (showAdButton) {
-          setShowAdButton(false);
-          setCorrectAnswers(0);
-          toast({
-            title: '✅ Продолжайте!',
-            description: 'Вы можете продолжить отвечать на вопросы',
-          });
-        } else {
-          setLives(1);
-          setIsGameOver(false);
-          setSelectedAnswer(null);
-          setIsAnswered(false);
-          setCorrectAnswers(0);
-          toast({
-            title: '❤️ Жизнь восстановлена!',
-            description: 'Вы можете продолжить игру',
-          });
-        }
-      } else if (result.error) {
+    toast({
+      title: '📺 Реклама',
+      description: 'Закройте рекламу для продолжения игры',
+    });
+
+    setTimeout(() => {
+      if (showAdButton) {
+        setShowAdButton(false);
+        setCorrectAnswers(0);
         toast({
-          title: '❌ Ошибка',
-          description: 'Не удалось показать рекламу',
-          variant: 'destructive',
+          title: '✅ Продолжайте!',
+          description: 'Вы можете продолжить отвечать на вопросы',
+        });
+      } else {
+        setLives(1);
+        setIsGameOver(false);
+        setSelectedAnswer(null);
+        setIsAnswered(false);
+        setCorrectAnswers(0);
+        toast({
+          title: '❤️ Жизнь восстановлена!',
+          description: 'Вы можете продолжить игру',
         });
       }
-    } catch (error) {
-      toast({
-        title: '❌ Ошибка',
-        description: 'Произошла ошибка при загрузке рекламы',
-        variant: 'destructive',
-      });
-    }
+    }, 3000);
   };
 
   const getAnswerButtonClass = (index: number) => {
