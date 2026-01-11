@@ -13,7 +13,7 @@ type QuizCategory = 'menu' | 'movies' | 'animals' | 'ocean' | 'ton';
 
 declare global {
   interface Window {
-    monetag?: any;
+    show_10450158?: () => Promise<void>;
   }
 }
 
@@ -52,17 +52,24 @@ export default function Index() {
   const currentQuestion = questions[currentQuestionIndex];
 
   useEffect(() => {
-    const interstitialScript = document.createElement('script');
-    interstitialScript.type = 'text/javascript';
-    interstitialScript.innerHTML = `
-      (function(d,z,s){s.src='https://'+d+'/401/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('waufooty.com',3185412,document.createElement('script'))
+    const rewardedScript = document.createElement('script');
+    rewardedScript.type = 'text/javascript';
+    rewardedScript.innerHTML = `
+      (function(d,z,s){s.src='https://'+d+'/401/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('waufooty.com',10450158,document.createElement('script'))
     `;
-    document.head.appendChild(interstitialScript);
-    setAdLoaded(true);
+    document.head.appendChild(rewardedScript);
+
+    const checkAdLoaded = setInterval(() => {
+      if (window.show_10450158) {
+        setAdLoaded(true);
+        clearInterval(checkAdLoaded);
+      }
+    }, 100);
 
     return () => {
-      if (interstitialScript.parentNode) {
-        document.head.removeChild(interstitialScript);
+      clearInterval(checkAdLoaded);
+      if (rewardedScript.parentNode) {
+        document.head.removeChild(rewardedScript);
       }
     };
   }, []);
@@ -200,8 +207,8 @@ export default function Index() {
     }
   };
 
-  const handleWatchAdToContinue = () => {
-    if (!adLoaded) {
+  const handleWatchAdToContinue = async () => {
+    if (!adLoaded || !window.show_10450158) {
       toast({
         title: '⚠️ Подождите',
         description: 'Загружаем рекламу...',
@@ -210,14 +217,9 @@ export default function Index() {
       return;
     }
 
-    window.open('https://waufooty.com/4/3185412', '_blank');
+    try {
+      await window.show_10450158();
 
-    toast({
-      title: '📺 Реклама открыта',
-      description: 'Просмотрите рекламу и вернитесь в игру',
-    });
-
-    setTimeout(() => {
       if (showAdButton) {
         setShowAdButton(false);
         setCorrectAnswers(0);
@@ -236,7 +238,13 @@ export default function Index() {
           description: 'Вы можете продолжить игру',
         });
       }
-    }, 2000);
+    } catch (error) {
+      toast({
+        title: '❌ Ошибка',
+        description: 'Не удалось показать рекламу',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getAnswerButtonClass = (index: number) => {
@@ -520,13 +528,8 @@ export default function Index() {
         )}
 
         <div className="fixed bottom-0 left-0 right-0 flex justify-center items-center bg-background/80 backdrop-blur-sm border-t border-border/30 pb-safe z-50">
-          <div className="w-full max-w-[728px] min-h-[90px] flex items-center justify-center">
-            <iframe 
-              src="https://waufooty.com/4/3185412" 
-              style={{width: '100%', height: '90px', border: 'none'}}
-              scrolling="no"
-              title="Advertisement"
-            />
+          <div className="w-full max-w-[728px] min-h-[90px] flex items-center justify-center p-2">
+            <div className="text-xs text-muted-foreground">Баннерная реклама</div>
           </div>
         </div>
       </div>
