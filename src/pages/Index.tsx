@@ -53,32 +53,16 @@ export default function Index() {
 
   useEffect(() => {
     const interstitialScript = document.createElement('script');
+    interstitialScript.type = 'text/javascript';
     interstitialScript.innerHTML = `
       (function(d,z,s){s.src='https://'+d+'/401/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('waufooty.com',3185412,document.createElement('script'))
     `;
-    document.body.appendChild(interstitialScript);
-
-    const bannerScript = document.createElement('script');
-    bannerScript.async = true;
-    bannerScript.setAttribute('data-cfasync', 'false');
-    bannerScript.src = '//pl24549136.profitablecpmrate.com/ac8ed1c4be61b769cf0eca9ffdc76e10/invoke.js';
-    document.body.appendChild(bannerScript);
-
-    const bannerContainer = document.createElement('div');
-    bannerContainer.id = 'container-ac8ed1c4be61b769cf0eca9ffdc76e10';
-    document.body.appendChild(bannerContainer);
-
+    document.head.appendChild(interstitialScript);
     setAdLoaded(true);
 
     return () => {
       if (interstitialScript.parentNode) {
-        document.body.removeChild(interstitialScript);
-      }
-      if (bannerScript.parentNode) {
-        document.body.removeChild(bannerScript);
-      }
-      if (bannerContainer.parentNode) {
-        document.body.removeChild(bannerContainer);
+        document.head.removeChild(interstitialScript);
       }
     };
   }, []);
@@ -226,9 +210,11 @@ export default function Index() {
       return;
     }
 
+    window.open('https://waufooty.com/4/3185412', '_blank');
+
     toast({
-      title: '📺 Реклама',
-      description: 'Закройте рекламу для продолжения игры',
+      title: '📺 Реклама открыта',
+      description: 'Просмотрите рекламу и вернитесь в игру',
     });
 
     setTimeout(() => {
@@ -250,7 +236,7 @@ export default function Index() {
           description: 'Вы можете продолжить игру',
         });
       }
-    }, 3000);
+    }, 2000);
   };
 
   const getAnswerButtonClass = (index: number) => {
@@ -534,7 +520,14 @@ export default function Index() {
         )}
 
         <div className="fixed bottom-0 left-0 right-0 flex justify-center items-center bg-background/80 backdrop-blur-sm border-t border-border/30 pb-safe z-50">
-          <div id="container-ac8ed1c4be61b769cf0eca9ffdc76e10" className="w-full max-w-[728px] min-h-[90px] flex items-center justify-center"></div>
+          <div className="w-full max-w-[728px] min-h-[90px] flex items-center justify-center">
+            <iframe 
+              src="https://waufooty.com/4/3185412" 
+              style={{width: '100%', height: '90px', border: 'none'}}
+              scrolling="no"
+              title="Advertisement"
+            />
+          </div>
         </div>
       </div>
     </div>
